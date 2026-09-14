@@ -1,3 +1,10 @@
+## v2.0.2 [2026-09-14]
+
+_Bug fixes_
+
+- Fixed the `project` and `organization` columns in the `scaleway_kubernetes_cluster` table to correctly return the project and organization IDs instead of `null`. ([#175](https://github.com/turbot/steampipe-plugin-scaleway/pull/175)) (Thanks [@pdecat](https://github.com/pdecat) for the contribution!)
+- Fixed the `dashboard_enabled` column in the `scaleway_kubernetes_cluster` table and the `autoscaling` and `autohealing` columns in the `scaleway_kubernetes_pool` table to correctly return `null` instead of `false` when the API does not return a value. ([#175](https://github.com/turbot/steampipe-plugin-scaleway/pull/175)) (Thanks [@pdecat](https://github.com/pdecat) for the contribution!)
+
 ## v2.0.1 [2026-09-11]
 
 _Bug fixes_
