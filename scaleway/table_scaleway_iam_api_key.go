@@ -37,12 +37,6 @@ func tableScalewayIamAPIKey(_ context.Context) *plugin.Table {
 				Type:        proto.ColumnType_STRING,
 			},
 			{
-				Name:        "secret_key",
-				Description: "The secret key of API Key.",
-				Type:        proto.ColumnType_STRING,
-				Transform:   transform.FromField("SecretKey").Transform(transform.ToString),
-			},
-			{
 				Name:        "application_id",
 				Description: "ID of application bearer.",
 				Type:        proto.ColumnType_STRING,
