@@ -1,7 +1,7 @@
 package scaleway
 
 import (
-	"github.com/turbot/steampipe-plugin-sdk/v6/plugin"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
 
 type scalewayConfig struct {
@@ -17,9 +17,9 @@ func ConfigInstance() interface{} {
 
 // GetConfig :: retrieve and cast connection config from query data
 func GetConfig(connection *plugin.Connection) scalewayConfig {
-	if connection == nil {
+	if connection == nil || connection.Config == nil {
 		return scalewayConfig{}
 	}
-	config, _ := connection.GetConfig().(scalewayConfig)
+	config, _ := connection.Config.(scalewayConfig)
 	return config
 }
