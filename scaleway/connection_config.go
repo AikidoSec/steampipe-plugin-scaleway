@@ -5,10 +5,11 @@ import (
 )
 
 type scalewayConfig struct {
-	AccessKey      *string  `hcl:"access_key"`
-	SecretKey      *string  `hcl:"secret_key"`
-	OrganizationID *string  `hcl:"organization_id"`
-	Regions        []string `hcl:"regions,optional"`
+	AccessKey        *string  `hcl:"access_key"`
+	SecretKey        *string  `hcl:"secret_key"`
+	OrganizationID   *string  `hcl:"organization_id"`
+	Regions          []string `hcl:"regions,optional"`
+	IgnoreErrorCodes []string `hcl:"ignore_error_codes,optional"`
 }
 
 func ConfigInstance() interface{} {
