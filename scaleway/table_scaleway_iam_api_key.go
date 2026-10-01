@@ -86,6 +86,18 @@ func tableScalewayIamAPIKey(_ context.Context) *plugin.Table {
 				Type:        proto.ColumnType_STRING,
 				Transform:   transform.FromField("Description").Transform(transform.ToString),
 			},
+			{
+				Name:        "title",
+				Description: "Title of the resource.",
+				Type:        proto.ColumnType_STRING,
+				Transform:   transform.FromField("AccessKey"),
+			},
+			{
+				Name:        "akas",
+				Description: "Array of globally unique identifier strings (also known as) for the resource.",
+				Type:        proto.ColumnType_JSON,
+				Transform:   transform.FromField("AccessKey").Transform(transform.EnsureStringArray),
+			},
 		},
 	}
 }

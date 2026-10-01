@@ -107,6 +107,12 @@ func tableScalewayVPC(_ context.Context) *plugin.Table {
 				Type:        proto.ColumnType_STRING,
 				Transform:   transform.FromField("Name"),
 			},
+			{
+				Name:        "akas",
+				Description: "Array of globally unique identifier strings (also known as) for the resource.",
+				Type:        proto.ColumnType_JSON,
+				Transform:   transform.FromField("ID").Transform(transform.EnsureStringArray),
+			},
 		},
 	}
 }
