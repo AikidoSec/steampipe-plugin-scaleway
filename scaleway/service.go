@@ -63,10 +63,30 @@ func getSessionConfig(ctx context.Context, d *plugin.QueryData) (*scw.Client, er
 	return client, nil
 }
 
-// getObjectSessionConfig :: returns S3 client to perform Object Storage API requests
-func getObjectSessionConfig(ctx context.Context, d *plugin.QueryData, region string) (*s3.S3, error) {
+// objectAccessKey returns the S3 access key used to scope Object Storage requests to a project.
+// Scaleway's S3 API is project-scoped; the project is selected by suffixing the access key with `@<project_id>`.
+func objectAccessKey(accessKey, project string) string {
+	if project == "" {
+		return accessKey
+	}
+
+	return accessKey + "@" + project
+}
+
+// objectSessionCacheKey returns the cache key of the S3 client for a region and an optional project.
+func objectSessionCacheKey(region, project string) string {
+	if project == "" {
+		return "scaleway.objectclient-" + region
+	}
+
+	return "scaleway.objectclient-" + region + "-" + project
+}
+
+// getObjectSessionConfig :: returns S3 client to perform Object Storage API requests.
+// An empty project uses the default project of the credentials.
+func getObjectSessionConfig(ctx context.Context, d *plugin.QueryData, region, project string) (*s3.S3, error) {
 	// Load clientOptions from cache
-	sessionCacheKey := "scaleway.objectclient-" + region
+	sessionCacheKey := objectSessionCacheKey(region, project)
 	if cachedData, ok := d.ConnectionManager.Cache.Get(sessionCacheKey); ok {
 		return cachedData.(*s3.S3), nil
 	}
@@ -102,7 +122,7 @@ func getObjectSessionConfig(ctx context.Context, d *plugin.QueryData, region str
 	sessionOptions := session.Options{
 		Config: aws.Config{
 			Region:      &region,
-			Credentials: credentials.NewStaticCredentials(accessKey, secretKey, ""),
+			Credentials: credentials.NewStaticCredentials(objectAccessKey(accessKey, project), secretKey, ""),
 			Endpoint:    scw.StringPtr("https://s3." + region + ".scw.cloud"),
 		},
 	}
