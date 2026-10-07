@@ -6,9 +6,9 @@ import (
 	"github.com/scaleway/scaleway-sdk-go/api/k8s/v1"
 
 	"github.com/scaleway/scaleway-sdk-go/scw"
-	"github.com/turbot/steampipe-plugin-sdk/v6/grpc/proto"
-	"github.com/turbot/steampipe-plugin-sdk/v6/plugin"
-	"github.com/turbot/steampipe-plugin-sdk/v6/plugin/transform"
+	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
 )
 
 //// TABLE DEFINITION
@@ -219,7 +219,7 @@ func listKubernetesNodes(ctx context.Context, d *plugin.QueryData, h *plugin.Hyd
 			}
 		}
 
-		if resp.TotalCount == uint32(count) {
+		if int(resp.TotalCount) == count {
 			break
 		}
 		req.Page = scw.Int32Ptr(*req.Page + 1)

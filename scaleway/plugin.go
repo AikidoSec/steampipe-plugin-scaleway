@@ -3,8 +3,8 @@ package scaleway
 import (
 	"context"
 
-	"github.com/turbot/steampipe-plugin-sdk/v6/plugin"
-	"github.com/turbot/steampipe-plugin-sdk/v6/plugin/transform"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
 )
 
 const pluginName = "steampipe-plugin-scaleway"
@@ -15,6 +15,9 @@ func Plugin(ctx context.Context) *plugin.Plugin {
 		Name:             pluginName,
 		DefaultTransform: transform.FromCamel().Transform(transform.NullIfZeroValue),
 		DefaultGetConfig: &plugin.GetConfig{},
+		DefaultIgnoreConfig: &plugin.IgnoreConfig{
+			ShouldIgnoreErrorFunc: shouldIgnoreErrorPluginDefault(),
+		},
 		ConnectionConfigSchema: &plugin.ConnectionConfigSchema{
 			NewInstance: ConfigInstance,
 		},

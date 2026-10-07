@@ -4,12 +4,11 @@ import (
 	"context"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 
-	"github.com/turbot/steampipe-plugin-sdk/v6/grpc/proto"
-	"github.com/turbot/steampipe-plugin-sdk/v6/plugin"
-	"github.com/turbot/steampipe-plugin-sdk/v6/plugin/transform"
+	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
 )
 
 //// TABLE DEFINITION
@@ -117,6 +116,12 @@ func tableScalewayObjectBucket(_ context.Context) *plugin.Table {
 				Type:        proto.ColumnType_STRING,
 				Transform:   transform.FromField("Name"),
 			},
+			{
+				Name:        "akas",
+				Description: "Array of globally unique identifier strings (also known as) for the resource.",
+				Type:        proto.ColumnType_JSON,
+				Transform:   transform.FromField("Name").Transform(transform.EnsureStringArray),
+			},
 		},
 	}
 }
@@ -179,6 +184,9 @@ func getBucketVersioning(ctx context.Context, d *plugin.QueryData, h *plugin.Hyd
 		Bucket: bucket.Name,
 	})
 	if err != nil {
+		if is403Error(err) || is404Error(err) {
+			return nil, nil
+		}
 		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketVersioning", "query_error", err)
 		return nil, err
 	}
@@ -205,12 +213,10 @@ func getBucketIsPublic(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 		Bucket: bucket.Name,
 	})
 	if err != nil {
-		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketIsPublic", "query_error", err)
-		if a, ok := err.(awserr.Error); ok {
-			if a.Code() == "NoSuchBucketPolicy" {
-				return &s3.GetBucketPolicyStatusOutput{}, nil
-			}
+		if is403Error(err) || is404Error(err) {
+			return nil, nil
 		}
+		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketIsPublic", "query_error", err)
 		return nil, err
 	}
 
@@ -236,12 +242,10 @@ func getBucketPolicy(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrate
 		Bucket: bucket.Name,
 	})
 	if err != nil {
-		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketPolicy", "query_error", err)
-		if a, ok := err.(awserr.Error); ok {
-			if a.Code() == "NoSuchBucketPolicy" {
-				return &s3.GetBucketPolicyOutput{}, nil
-			}
+		if is403Error(err) || is404Error(err) {
+			return nil, nil
 		}
+		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketPolicy", "query_error", err)
 		return nil, err
 	}
 
@@ -267,12 +271,10 @@ func getBucketLifecycle(ctx context.Context, d *plugin.QueryData, h *plugin.Hydr
 		Bucket: bucket.Name,
 	})
 	if err != nil {
-		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketLifecycle", "query_error", err)
-		if a, ok := err.(awserr.Error); ok {
-			if a.Code() == "NoSuchLifecycleConfiguration" {
-				return nil, nil
-			}
+		if is403Error(err) || is404Error(err) {
+			return nil, nil
 		}
+		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketLifecycle", "query_error", err)
 		return nil, err
 	}
 
@@ -298,6 +300,10 @@ func getBucketACL(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateDat
 		Bucket: bucket.Name,
 	})
 	if err != nil {
+		if is403Error(err) || is404Error(err) {
+			return nil, nil
+		}
+		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketACL", "query_error", err)
 		return nil, err
 	}
 

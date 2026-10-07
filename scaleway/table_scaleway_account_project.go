@@ -7,9 +7,9 @@ import (
 	"github.com/scaleway/scaleway-sdk-go/api/account/v3"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 
-	"github.com/turbot/steampipe-plugin-sdk/v6/grpc/proto"
-	"github.com/turbot/steampipe-plugin-sdk/v6/plugin"
-	"github.com/turbot/steampipe-plugin-sdk/v6/plugin/transform"
+	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
 )
 
 //// TABLE DEFINITION
@@ -63,6 +63,18 @@ func tableScalewayAccountProject(_ context.Context) *plugin.Table {
 				Description: "Organization ID of the project.",
 				Type:        proto.ColumnType_STRING,
 				Transform:   transform.FromField("OrganizationID"),
+			},
+			{
+				Name:        "title",
+				Description: "Title of the resource.",
+				Type:        proto.ColumnType_STRING,
+				Transform:   transform.FromField("Name"),
+			},
+			{
+				Name:        "akas",
+				Description: "Array of globally unique identifier strings (also known as) for the resource.",
+				Type:        proto.ColumnType_JSON,
+				Transform:   transform.FromField("ID").Transform(transform.EnsureStringArray),
 			},
 		},
 	}

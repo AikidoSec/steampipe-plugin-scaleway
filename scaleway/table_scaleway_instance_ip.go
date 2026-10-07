@@ -2,13 +2,14 @@ package scaleway
 
 import (
 	"context"
+	"net"
 
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 
 	"github.com/scaleway/scaleway-sdk-go/scw"
-	"github.com/turbot/steampipe-plugin-sdk/v6/grpc/proto"
-	"github.com/turbot/steampipe-plugin-sdk/v6/plugin"
-	"github.com/turbot/steampipe-plugin-sdk/v6/plugin/transform"
+	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
 )
 
 //// TABLE DEFINITION
@@ -42,7 +43,7 @@ func tableScalewayInstanceIP(_ context.Context) *plugin.Table {
 				Name:        "address",
 				Description: "Specifies the IP address.",
 				Type:        proto.ColumnType_IPADDR,
-				Transform:   transform.FromField("Address").Transform(transform.ToString),
+				Transform:   transform.FromField("Address").Transform(safeIPAddrToString),
 			},
 			{
 				Name:        "reverse",
@@ -85,8 +86,29 @@ func tableScalewayInstanceIP(_ context.Context) *plugin.Table {
 				Type:        proto.ColumnType_STRING,
 				Transform:   transform.FromField("Address").Transform(transform.ToString),
 			},
+			{
+				Name:        "akas",
+				Description: "Array of globally unique identifier strings (also known as) for the resource.",
+				Type:        proto.ColumnType_JSON,
+				Transform:   transform.FromField("ID").Transform(transform.EnsureStringArray),
+			},
 		},
 	}
+}
+
+//// TRANSFORM FUNCTIONS
+
+// safeIPAddrToString handles a net.IP field for an IPADDR column. The default
+// transform.ToString falls back to net.IP's Stringer, which renders an
+// empty/zero IP as the literal string "<nil>" rather than an empty string -
+// that then fails steampipe's net.ParseIP check and aborts the whole List
+// call for every row, not just this one.
+func safeIPAddrToString(_ context.Context, d *transform.TransformData) (interface{}, error) {
+	ip, ok := d.Value.(net.IP)
+	if !ok || len(ip) == 0 {
+		return nil, nil
+	}
+	return ip.String(), nil
 }
 
 //// LIST FUNCTION

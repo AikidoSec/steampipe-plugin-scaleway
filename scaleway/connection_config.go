@@ -1,14 +1,15 @@
 package scaleway
 
 import (
-	"github.com/turbot/steampipe-plugin-sdk/v6/plugin"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
 
 type scalewayConfig struct {
-	AccessKey      *string  `hcl:"access_key"`
-	SecretKey      *string  `hcl:"secret_key"`
-	OrganizationID *string  `hcl:"organization_id"`
-	Regions        []string `hcl:"regions,optional"`
+	AccessKey        *string  `hcl:"access_key"`
+	SecretKey        *string  `hcl:"secret_key"`
+	OrganizationID   *string  `hcl:"organization_id"`
+	Regions          []string `hcl:"regions,optional"`
+	IgnoreErrorCodes []string `hcl:"ignore_error_codes,optional"`
 }
 
 func ConfigInstance() interface{} {
@@ -17,9 +18,9 @@ func ConfigInstance() interface{} {
 
 // GetConfig :: retrieve and cast connection config from query data
 func GetConfig(connection *plugin.Connection) scalewayConfig {
-	if connection == nil {
+	if connection == nil || connection.Config == nil {
 		return scalewayConfig{}
 	}
-	config, _ := connection.GetConfig().(scalewayConfig)
+	config, _ := connection.Config.(scalewayConfig)
 	return config
 }
