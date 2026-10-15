@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
+	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 )
 
@@ -19,7 +19,7 @@ func is403Error(err error) bool {
 }
 
 // isHTTPCodeError matches statusCode against either a native-API
-// *scw.ResponseError or an S3-compatible-endpoint awserr.RequestFailure.
+// *scw.ResponseError or an S3-compatible-endpoint *awshttp.ResponseError.
 func isHTTPCodeError(err error, statusCode int) bool {
 	if err == nil {
 		return false
@@ -30,8 +30,8 @@ func isHTTPCodeError(err error, statusCode int) bool {
 		return true
 	}
 
-	var requestFailure awserr.RequestFailure
-	if errors.As(err, &requestFailure) && requestFailure.StatusCode() == statusCode {
+	var awsResponseError *awshttp.ResponseError
+	if errors.As(err, &awsResponseError) && awsResponseError.HTTPStatusCode() == statusCode {
 		return true
 	}
 

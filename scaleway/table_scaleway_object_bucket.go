@@ -4,7 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 
 	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
@@ -72,7 +73,7 @@ func tableScalewayObjectBucket(_ context.Context) *plugin.Table {
 				Description: "The access control list (ACL) of a bucket.",
 				Type:        proto.ColumnType_JSON,
 				Hydrate:     getBucketACL,
-				Transform:   transform.FromValue(),
+				Transform:   transform.FromValue().Transform(omitResultMetadata),
 			},
 			{
 				Name:        "lifecycle_rules",
@@ -86,7 +87,7 @@ func tableScalewayObjectBucket(_ context.Context) *plugin.Table {
 				Description: "The website configuration for a bucket.",
 				Type:        proto.ColumnType_JSON,
 				Hydrate:     getBucketWebsite,
-				Transform:   transform.FromValue(),
+				Transform:   transform.FromValue().Transform(omitResultMetadata),
 			},
 			{
 				Name:        "policy",
@@ -133,7 +134,7 @@ func tableScalewayObjectBucket(_ context.Context) *plugin.Table {
 }
 
 type bucketInfo = struct {
-	s3.Bucket
+	types.Bucket
 	Region  string
 	Project string
 }
@@ -170,7 +171,7 @@ func listObjectBuckets(ctx context.Context, d *plugin.QueryData, _ *plugin.Hydra
 		return nil, err
 	}
 
-	resp, err := client.ListBucketsWithContext(ctx, &s3.ListBucketsInput{})
+	resp, err := client.ListBuckets(ctx, &s3.ListBucketsInput{})
 	if err != nil {
 		plugin.Logger(ctx).Error("scaleway_object_bucket.listObjectBuckets", "query_error", err)
 		return nil, err
@@ -178,7 +179,7 @@ func listObjectBuckets(ctx context.Context, d *plugin.QueryData, _ *plugin.Hydra
 
 	project := bucketProject(scopedProject, resp.Owner.ID)
 	for _, bucket := range resp.Buckets {
-		d.StreamListItem(ctx, bucketInfo{*bucket, region, project})
+		d.StreamListItem(ctx, bucketInfo{bucket, region, project})
 
 		// Context can be cancelled due to manual cancellation or the limit has been hit
 		if d.RowsRemaining(ctx) == 0 {
@@ -206,7 +207,7 @@ func getBucketVersioning(ctx context.Context, d *plugin.QueryData, h *plugin.Hyd
 		return nil, err
 	}
 
-	data, err := client.GetBucketVersioningWithContext(ctx, &s3.GetBucketVersioningInput{
+	data, err := client.GetBucketVersioning(ctx, &s3.GetBucketVersioningInput{
 		Bucket: bucket.Name,
 	})
 	if err != nil {
@@ -235,7 +236,7 @@ func getBucketIsPublic(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 		return nil, err
 	}
 
-	data, err := client.GetBucketPolicyStatusWithContext(ctx, &s3.GetBucketPolicyStatusInput{
+	data, err := client.GetBucketPolicyStatus(ctx, &s3.GetBucketPolicyStatusInput{
 		Bucket: bucket.Name,
 	})
 	if err != nil {
@@ -264,7 +265,7 @@ func getBucketPolicy(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrate
 		return nil, err
 	}
 
-	bucketPolicy, err := client.GetBucketPolicyWithContext(ctx, &s3.GetBucketPolicyInput{
+	bucketPolicy, err := client.GetBucketPolicy(ctx, &s3.GetBucketPolicyInput{
 		Bucket: bucket.Name,
 	})
 	if err != nil {
@@ -293,7 +294,7 @@ func getBucketLifecycle(ctx context.Context, d *plugin.QueryData, h *plugin.Hydr
 		return nil, err
 	}
 
-	data, err := client.GetBucketLifecycleConfigurationWithContext(ctx, &s3.GetBucketLifecycleConfigurationInput{
+	data, err := client.GetBucketLifecycleConfiguration(ctx, &s3.GetBucketLifecycleConfigurationInput{
 		Bucket: bucket.Name,
 	})
 	if err != nil {
@@ -322,7 +323,7 @@ func getBucketACL(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateDat
 		return nil, err
 	}
 
-	data, err := client.GetBucketAclWithContext(ctx, &s3.GetBucketAclInput{
+	data, err := client.GetBucketAcl(ctx, &s3.GetBucketAclInput{
 		Bucket: bucket.Name,
 	})
 	if err != nil {
@@ -351,7 +352,7 @@ func getBucketTagging(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrat
 		return nil, err
 	}
 
-	bucketTags, err := client.GetBucketTaggingWithContext(ctx, &s3.GetBucketTaggingInput{
+	bucketTags, err := client.GetBucketTagging(ctx, &s3.GetBucketTaggingInput{
 		Bucket: bucket.Name,
 	})
 	if err != nil {
@@ -380,7 +381,7 @@ func getBucketCors(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateDa
 		return nil, err
 	}
 
-	data, err := client.GetBucketCorsWithContext(ctx, &s3.GetBucketCorsInput{
+	data, err := client.GetBucketCors(ctx, &s3.GetBucketCorsInput{
 		Bucket: bucket.Name,
 	})
 	if err != nil {
@@ -409,7 +410,7 @@ func getBucketWebsite(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrat
 		return nil, err
 	}
 
-	data, err := client.GetBucketWebsiteWithContext(ctx, &s3.GetBucketWebsiteInput{
+	data, err := client.GetBucketWebsite(ctx, &s3.GetBucketWebsiteInput{
 		Bucket: bucket.Name,
 	})
 	if err != nil {

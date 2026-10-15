@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	awssdkerr "github.com/aws/aws-sdk-go/aws/awserr"
+	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
+	"github.com/aws/smithy-go"
+	smithyhttp "github.com/aws/smithy-go/transport/http"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 )
 
@@ -77,19 +79,25 @@ func TestIs404Error(t *testing.T) {
 	}
 }
 
-func TestIsHTTPCodeErrorAWSRequestFailure(t *testing.T) {
-	reqErr := awssdkerr.NewRequestFailure(
-		awssdkerr.New("AccessDenied", "Access Denied", nil),
-		http.StatusForbidden,
-		"request-id",
-	)
-
-	if !isHTTPCodeError(reqErr, http.StatusForbidden) {
-		t.Errorf("isHTTPCodeError() = false, want true for awserr.RequestFailure with matching status code")
+func TestIsHTTPCodeErrorAWSResponseError(t *testing.T) {
+	respErr := &smithy.OperationError{
+		ServiceID:     "S3",
+		OperationName: "GetBucketAcl",
+		Err: &awshttp.ResponseError{
+			ResponseError: &smithyhttp.ResponseError{
+				Response: &smithyhttp.Response{Response: &http.Response{StatusCode: http.StatusForbidden}},
+				Err:      errPlain("AccessDenied"),
+			},
+			RequestID: "request-id",
+		},
 	}
 
-	if isHTTPCodeError(reqErr, http.StatusNotFound) {
-		t.Errorf("isHTTPCodeError() = true, want false for awserr.RequestFailure with non-matching status code")
+	if !isHTTPCodeError(respErr, http.StatusForbidden) {
+		t.Errorf("isHTTPCodeError() = false, want true for awshttp.ResponseError with matching status code")
+	}
+
+	if isHTTPCodeError(respErr, http.StatusNotFound) {
+		t.Errorf("isHTTPCodeError() = true, want false for awshttp.ResponseError with non-matching status code")
 	}
 }
 

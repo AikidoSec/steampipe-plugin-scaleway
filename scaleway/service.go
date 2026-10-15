@@ -4,10 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/scaleway/scaleway-sdk-go/scw"
 	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
 )
@@ -84,11 +82,11 @@ func objectSessionCacheKey(region, project string) string {
 
 // getObjectSessionConfig :: returns S3 client to perform Object Storage API requests.
 // An empty project uses the default project of the credentials.
-func getObjectSessionConfig(ctx context.Context, d *plugin.QueryData, region, project string) (*s3.S3, error) {
+func getObjectSessionConfig(ctx context.Context, d *plugin.QueryData, region, project string) (*s3.Client, error) {
 	// Load clientOptions from cache
 	sessionCacheKey := objectSessionCacheKey(region, project)
 	if cachedData, ok := d.ConnectionManager.Cache.Get(sessionCacheKey); ok {
-		return cachedData.(*s3.S3), nil
+		return cachedData.(*s3.Client), nil
 	}
 
 	var accessKey, secretKey string
@@ -118,20 +116,11 @@ func getObjectSessionConfig(ctx context.Context, d *plugin.QueryData, region, pr
 		return nil, fmt.Errorf("both access_key and secret_key must be configured")
 	}
 
-	// session default configuration
-	sessionOptions := session.Options{
-		Config: aws.Config{
-			Region:      &region,
-			Credentials: credentials.NewStaticCredentials(objectAccessKey(accessKey, project), secretKey, ""),
-			Endpoint:    scw.StringPtr("https://s3." + region + ".scw.cloud"),
-		},
-	}
-
-	s, err := session.NewSessionWithOptions(sessionOptions)
-	if err != nil {
-		return nil, err
-	}
-	client := s3.New(s)
+	client := s3.New(s3.Options{
+		Region:       region,
+		Credentials:  credentials.NewStaticCredentialsProvider(objectAccessKey(accessKey, project), secretKey, ""),
+		BaseEndpoint: scw.StringPtr("https://s3." + region + ".scw.cloud"),
+	})
 
 	// save clientOptions in cache
 	d.ConnectionManager.Cache.Set(sessionCacheKey, client)
