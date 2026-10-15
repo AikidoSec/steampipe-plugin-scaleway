@@ -61,7 +61,7 @@ func tableScalewayIamOrganizationSecuritySettings(_ context.Context) *plugin.Tab
 				Name:        "title",
 				Description: "Title of the resource.",
 				Type:        proto.ColumnType_STRING,
-				Transform:   transform.FromField("OrganizationID"),
+				Transform:   transform.From(iamOrganizationSecuritySettingsTitle),
 			},
 			{
 				Name:        "akas",
@@ -77,6 +77,7 @@ func tableScalewayIamOrganizationSecuritySettings(_ context.Context) *plugin.Tab
 // organization ID, which the API response does not carry.
 type iamOrganizationSecuritySettingsRow struct {
 	OrganizationID              string
+	OrganizationName            string
 	MaxAPIKeyExpirationDuration *scw.Duration
 	EnforcePasswordRenewal      bool
 	LoginAttemptsBeforeLocked   uint32
@@ -95,11 +96,28 @@ func durationToSeconds(_ context.Context, d *transform.TransformData) (interface
 	return dur.Seconds, nil
 }
 
+// iamOrganizationSecuritySettingsTitle uses the organization name, falling
+// back to the organization ID when the name could not be read.
+func iamOrganizationSecuritySettingsTitle(_ context.Context, d *transform.TransformData) (interface{}, error) {
+	row, ok := d.HydrateItem.(iamOrganizationSecuritySettingsRow)
+	if !ok {
+		return nil, nil
+	}
+	if row.OrganizationName != "" {
+		return row.OrganizationName, nil
+	}
+	return row.OrganizationID, nil
+}
+
 //// LIST FUNCTION
 
 func listIamOrganizationSecuritySettings(ctx context.Context, d *plugin.QueryData, _ *plugin.HydrateData) (interface{}, error) {
+	logger := plugin.Logger(ctx)
+	logger.Warn("scaleway_iam_organization_security_settings.listIamOrganizationSecuritySettings", "status", "start")
+
 	organisationId := GetConfig(d.Connection).OrganizationID
 	if organisationId == nil || *organisationId == "" {
+		logger.Error("scaleway_iam_organization_security_settings.listIamOrganizationSecuritySettings", "config_error", "organization_id is not configured")
 		return nil, errors.New("organization_id must be configured to query scaleway_iam_organization_security_settings")
 	}
 
@@ -118,15 +136,32 @@ func listIamOrganizationSecuritySettings(ctx context.Context, d *plugin.QueryDat
 		plugin.Logger(ctx).Error("scaleway_iam_organization_security_settings.listIamOrganizationSecuritySettings", "query_error", err)
 		return nil, err
 	}
+	logger.Warn("scaleway_iam_organization_security_settings.listIamOrganizationSecuritySettings", "status", "settings_fetched", "organization_id", *organisationId)
+
+	// The name only feeds the title, so a missing permission leaves the ID as title.
+	organizationName := ""
+	organization, err := iamApi.GetOrganization(&iam.GetOrganizationRequest{OrganizationID: *organisationId})
+	switch {
+	case err == nil:
+		organizationName = organization.Name
+		logger.Warn("scaleway_iam_organization_security_settings.listIamOrganizationSecuritySettings", "status", "organization_fetched", "organization_name", organizationName)
+	case is403Error(err) || is404Error(err):
+		plugin.Logger(ctx).Warn("scaleway_iam_organization_security_settings.listIamOrganizationSecuritySettings", "organization_name_unavailable", err)
+	default:
+		plugin.Logger(ctx).Error("scaleway_iam_organization_security_settings.listIamOrganizationSecuritySettings", "organization_query_error", err)
+		return nil, err
+	}
 
 	d.StreamListItem(ctx, iamOrganizationSecuritySettingsRow{
 		OrganizationID:              *organisationId,
+		OrganizationName:            organizationName,
 		MaxAPIKeyExpirationDuration: settings.MaxAPIKeyExpirationDuration,
 		EnforcePasswordRenewal:      settings.EnforcePasswordRenewal,
 		LoginAttemptsBeforeLocked:   settings.LoginAttemptsBeforeLocked,
 		MaxLoginSessionDuration:     settings.MaxLoginSessionDuration,
 		GracePeriodDuration:         settings.GracePeriodDuration,
 	})
+	logger.Warn("scaleway_iam_organization_security_settings.listIamOrganizationSecuritySettings", "status", "row_streamed", "organization_id", *organisationId)
 
 	return nil, nil
 }

@@ -132,8 +132,8 @@ func ipNetToString(_ context.Context, d *transform.TransformData) (interface{}, 
 	return n.String(), nil
 }
 
-// instanceIPTitle uses the address, falling back to the id for rows without
-// one (IPv6 prefix rows).
+// instanceIPTitle uses the address, falling back to the prefix for rows
+// without one (IPv6 prefix rows), then to the id.
 func instanceIPTitle(_ context.Context, d *transform.TransformData) (interface{}, error) {
 	ip, ok := d.HydrateItem.(*instance.IP)
 	if !ok || ip == nil {
@@ -141,6 +141,9 @@ func instanceIPTitle(_ context.Context, d *transform.TransformData) (interface{}
 	}
 	if len(ip.Address) > 0 {
 		return ip.Address.String(), nil
+	}
+	if ip.Prefix.IP != nil {
+		return ip.Prefix.String(), nil
 	}
 	return ip.ID, nil
 }

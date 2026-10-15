@@ -79,8 +79,8 @@ func tableScalewayRDBInstance(_ context.Context) *plugin.Table {
 				Type:        proto.ColumnType_JSON,
 			},
 			{
-				Name:        "endpoint",
-				Description: "Describes the endpoint of the instance.",
+				Name:        "endpoints",
+				Description: "A list of the endpoints of the instance (public load balancer, direct access or private network).",
 				Type:        proto.ColumnType_JSON,
 			},
 			{
