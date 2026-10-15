@@ -107,3 +107,30 @@ where
   state = 'running'
   and julianday('now') - julianday(creation_date) > 90;
 ```
+
+### List instance servers with their public IP addresses
+Expand the `public_ips` column to see the addresses attached to each server.
+
+```sql+postgres
+select
+  s.name,
+  s.id,
+  ip ->> 'address' as address,
+  ip ->> 'family' as family,
+  ip ->> 'dynamic' as dynamic
+from
+  scaleway_instance_server as s,
+  jsonb_array_elements(s.public_ips) as ip;
+```
+
+```sql+sqlite
+select
+  s.name,
+  s.id,
+  json_extract(ip.value, '$.address') as address,
+  json_extract(ip.value, '$.family') as family,
+  json_extract(ip.value, '$.dynamic') as dynamic
+from
+  scaleway_instance_server as s,
+  json_each(s.public_ips) as ip;
+```

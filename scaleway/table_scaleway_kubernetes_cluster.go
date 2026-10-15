@@ -133,6 +133,13 @@ func tableScalewayKubernetesCluster(_ context.Context) *plugin.Table {
 				Transform:   transform.FromField("OpenIDConnectConfig"),
 			},
 			{
+				Name:        "acl_rules",
+				Description: "The ACL rules restricting access to the cluster's Kubernetes API server.",
+				Type:        proto.ColumnType_JSON,
+				Hydrate:     getKubernetesClusterACLRules,
+				Transform:   transform.FromValue(),
+			},
+			{
 				Name:        "apiserver_cert_sans",
 				Description: "The additional Subject Alternative Names for the Kubernetes API server certificate.",
 				Type:        proto.ColumnType_STRING,
@@ -310,4 +317,49 @@ func getKubernetesCluster(ctx context.Context, d *plugin.QueryData, h *plugin.Hy
 	}
 
 	return data, nil
+}
+
+func getKubernetesClusterACLRules(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+	matrixRegion := d.EqualsQualString("region")
+	cluster := h.Item.(*k8s.Cluster)
+
+	if matrixRegion != cluster.Region.String() {
+		return nil, nil
+	}
+
+	client, err := getSessionConfig(ctx, d)
+	if err != nil {
+		plugin.Logger(ctx).Error("scaleway_kubernetes_cluster.getKubernetesClusterACLRules", "connection_error", err)
+		return nil, err
+	}
+
+	k8sApi := k8s.NewAPI(client)
+
+	req := &k8s.ListClusterACLRulesRequest{
+		Region:    cluster.Region,
+		ClusterID: cluster.ID,
+		Page:      scw.Int32Ptr(1),
+		PageSize:  scw.Uint32Ptr(100),
+	}
+
+	rules := []*k8s.ACLRule{}
+	for {
+		resp, err := k8sApi.ListClusterACLRules(req)
+		if err != nil {
+			if is403Error(err) || is404Error(err) {
+				return nil, nil
+			}
+			plugin.Logger(ctx).Error("scaleway_kubernetes_cluster.getKubernetesClusterACLRules", "query_error", err)
+			return nil, err
+		}
+
+		rules = append(rules, resp.Rules...)
+
+		if len(resp.Rules) == 0 || uint64(len(rules)) >= resp.TotalCount {
+			break
+		}
+		req.Page = scw.Int32Ptr(*req.Page + 1)
+	}
+
+	return rules, nil
 }

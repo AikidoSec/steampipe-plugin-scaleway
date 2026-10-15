@@ -64,3 +64,26 @@ where
   server is null
   and reverse is null;
 ```
+
+### List IPs by type with their prefix
+Show the IP type and CIDR prefix of each instance IP. The title is the address, or the ID when the IP has no address.
+
+```sql+postgres
+select
+  title,
+  type,
+  prefix,
+  zone
+from
+  scaleway_instance_ip;
+```
+
+```sql+sqlite
+select
+  title,
+  type,
+  prefix,
+  zone
+from
+  scaleway_instance_ip;
+```

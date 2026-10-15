@@ -13,6 +13,12 @@ func is404Error(err error) bool {
 	return isHTTPCodeError(err, http.StatusNotFound) || errors.As(err, &notFoundError)
 }
 
+// isNotFoundOrUnsupportedZoneError reports whether a zonal list error is treated
+// as an empty result: a 404, or a 501 "unknown service" for a product the zone does not serve.
+func isNotFoundOrUnsupportedZoneError(err error) bool {
+	return is404Error(err) || isHTTPCodeError(err, http.StatusNotImplemented)
+}
+
 func is403Error(err error) bool {
 	permissionsDeniedError := &scw.PermissionsDeniedError{}
 	return isHTTPCodeError(err, http.StatusForbidden) || errors.As(err, &permissionsDeniedError)

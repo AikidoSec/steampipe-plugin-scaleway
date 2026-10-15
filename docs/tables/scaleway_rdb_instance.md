@@ -126,3 +126,63 @@ from
 where
   json_extract(backup_schedule, '$.disabled') = 'true';
 ```
+
+### List database instances with their ACL rules
+Expand the `acl_rules` column. The column is fetched with one additional API call per instance.
+
+```sql+postgres
+select
+  i.name,
+  i.id,
+  a ->> 'ip' as ip,
+  a ->> 'action' as action,
+  a ->> 'direction' as direction,
+  a ->> 'description' as description
+from
+  scaleway_rdb_instance as i,
+  jsonb_array_elements(i.acl_rules) as a;
+```
+
+```sql+sqlite
+select
+  i.name,
+  i.id,
+  json_extract(a.value, '$.ip') as ip,
+  json_extract(a.value, '$.action') as action,
+  json_extract(a.value, '$.direction') as direction,
+  json_extract(a.value, '$.description') as description
+from
+  scaleway_rdb_instance as i,
+  json_each(i.acl_rules) as a;
+```
+
+### List database instances open to any address
+Find instances with an inbound allow rule covering every IPv4 or IPv6 address.
+
+```sql+postgres
+select
+  i.name,
+  i.id,
+  a ->> 'ip' as ip
+from
+  scaleway_rdb_instance as i,
+  jsonb_array_elements(i.acl_rules) as a
+where
+  a ->> 'direction' = 'inbound'
+  and a ->> 'action' = 'allow'
+  and a ->> 'ip' in ('0.0.0.0/0', '::/0');
+```
+
+```sql+sqlite
+select
+  i.name,
+  i.id,
+  json_extract(a.value, '$.ip') as ip
+from
+  scaleway_rdb_instance as i,
+  json_each(i.acl_rules) as a
+where
+  json_extract(a.value, '$.direction') = 'inbound'
+  and json_extract(a.value, '$.action') = 'allow'
+  and json_extract(a.value, '$.ip') in ('0.0.0.0/0', '::/0');
+```

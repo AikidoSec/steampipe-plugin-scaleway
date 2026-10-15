@@ -224,6 +224,9 @@ func listBaremetalServers(ctx context.Context, d *plugin.QueryData, _ *plugin.Hy
 		resp, err := baremetalApi.ListServers(req)
 		if err != nil {
 			plugin.Logger(ctx).Error("scaleway_baremetal_server.listBaremetalServers", "query_error", err)
+			if isNotFoundOrUnsupportedZoneError(err) {
+				return nil, nil
+			}
 			return nil, err
 		}
 
@@ -255,7 +258,7 @@ func getBaremetalServer(ctx context.Context, d *plugin.QueryData, h *plugin.Hydr
 
 	parseZoneData, err := scw.ParseZone(zone)
 	if err != nil {
-		plugin.Logger(ctx).Error("scaleway_baremetal_server.listBaremetalServers", "zone_parsing_error", err)
+		plugin.Logger(ctx).Error("scaleway_baremetal_server.getBaremetalServer", "zone_parsing_error", err)
 		return nil, err
 	}
 

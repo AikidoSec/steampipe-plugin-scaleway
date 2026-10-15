@@ -16,8 +16,8 @@ import (
 
 func tableScalewayInstanceIP(_ context.Context) *plugin.Table {
 	return &plugin.Table{
-		Name:          "scaleway_instance_ip",
-		Description:   "A flexible IP address is an IP address which you hold independently of any server.",
+		Name:              "scaleway_instance_ip",
+		Description:       "A flexible IP address is an IP address which you hold independently of any server.",
 		GetMatrixItemFunc: BuildZoneList,
 		List: &plugin.ListConfig{
 			Hydrate: listInstanceIPs,
@@ -44,6 +44,18 @@ func tableScalewayInstanceIP(_ context.Context) *plugin.Table {
 				Description: "Specifies the IP address.",
 				Type:        proto.ColumnType_IPADDR,
 				Transform:   transform.FromField("Address").Transform(safeIPAddrToString),
+			},
+			{
+				Name:        "type",
+				Description: "The type of the IP address.",
+				Type:        proto.ColumnType_STRING,
+				Transform:   transform.FromField("Type").Transform(transform.ToString),
+			},
+			{
+				Name:        "prefix",
+				Description: "The IP prefix (CIDR) of the IP address.",
+				Type:        proto.ColumnType_CIDR,
+				Transform:   transform.FromField("Prefix").Transform(ipNetToString),
 			},
 			{
 				Name:        "reverse",
@@ -84,7 +96,7 @@ func tableScalewayInstanceIP(_ context.Context) *plugin.Table {
 				Name:        "title",
 				Description: "Title of the resource.",
 				Type:        proto.ColumnType_STRING,
-				Transform:   transform.FromField("Address").Transform(transform.ToString),
+				Transform:   transform.From(instanceIPTitle),
 			},
 			{
 				Name:        "akas",
@@ -109,6 +121,28 @@ func safeIPAddrToString(_ context.Context, d *transform.TransformData) (interfac
 		return nil, nil
 	}
 	return ip.String(), nil
+}
+
+// ipNetToString renders a scw.IPNet as CIDR text, or nil when unset.
+func ipNetToString(_ context.Context, d *transform.TransformData) (interface{}, error) {
+	n, ok := d.Value.(scw.IPNet)
+	if !ok || n.IP == nil {
+		return nil, nil
+	}
+	return n.String(), nil
+}
+
+// instanceIPTitle uses the address, falling back to the id for rows without
+// one (IPv6 prefix rows).
+func instanceIPTitle(_ context.Context, d *transform.TransformData) (interface{}, error) {
+	ip, ok := d.HydrateItem.(*instance.IP)
+	if !ok || ip == nil {
+		return nil, nil
+	}
+	if len(ip.Address) > 0 {
+		return ip.Address.String(), nil
+	}
+	return ip.ID, nil
 }
 
 //// LIST FUNCTION
@@ -160,6 +194,9 @@ func listInstanceIPs(ctx context.Context, d *plugin.QueryData, _ *plugin.Hydrate
 		resp, err := instanceApi.ListIPs(req)
 		if err != nil {
 			plugin.Logger(ctx).Error("scaleway_instance_ip.listInstanceIPs", "query_error", err)
+			if isNotFoundOrUnsupportedZoneError(err) {
+				return nil, nil
+			}
 			return nil, err
 		}
 

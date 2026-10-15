@@ -70,3 +70,40 @@ from
 where
   project_default = 1;
 ```
+
+### List inbound accept rules open to the internet
+Expand the `rules` column and find inbound accept rules that allow any source address. The column is fetched with one additional API call per security group.
+
+```sql+postgres
+select
+  sg.name,
+  sg.id,
+  r ->> 'protocol' as protocol,
+  r ->> 'dest_port_from' as dest_port_from,
+  r ->> 'dest_port_to' as dest_port_to,
+  r ->> 'ip_range' as ip_range
+from
+  scaleway_instance_security_group as sg,
+  jsonb_array_elements(sg.rules) as r
+where
+  r ->> 'direction' = 'inbound'
+  and r ->> 'action' = 'accept'
+  and r ->> 'ip_range' in ('0.0.0.0/0', '::/0');
+```
+
+```sql+sqlite
+select
+  sg.name,
+  sg.id,
+  json_extract(r.value, '$.protocol') as protocol,
+  json_extract(r.value, '$.dest_port_from') as dest_port_from,
+  json_extract(r.value, '$.dest_port_to') as dest_port_to,
+  json_extract(r.value, '$.ip_range') as ip_range
+from
+  scaleway_instance_security_group as sg,
+  json_each(sg.rules) as r
+where
+  json_extract(r.value, '$.direction') = 'inbound'
+  and json_extract(r.value, '$.action') = 'accept'
+  and json_extract(r.value, '$.ip_range') in ('0.0.0.0/0', '::/0');
+```

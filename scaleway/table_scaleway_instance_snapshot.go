@@ -163,6 +163,9 @@ func listInstanceSnapshots(ctx context.Context, d *plugin.QueryData, _ *plugin.H
 		resp, err := instanceApi.ListSnapshots(req)
 		if err != nil {
 			plugin.Logger(ctx).Error("scaleway_instance_snapshot.listInstanceSnapshots", "query_error", err)
+			if isNotFoundOrUnsupportedZoneError(err) {
+				return nil, nil
+			}
 			return nil, err
 		}
 
