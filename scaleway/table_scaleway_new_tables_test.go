@@ -12,6 +12,7 @@ func TestNewTablesHaveUniqueColumns(t *testing.T) {
 	tables := []*plugin.Table{
 		tableScalewayLB(ctx),
 		tableScalewayIamApplication(ctx),
+		tableScalewayIamGroup(ctx),
 		tableScalewayIamPolicy(ctx),
 		tableScalewayIamOrganizationSecuritySettings(ctx),
 		tableScalewayAuditTrailAlertRule(ctx),

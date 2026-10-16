@@ -30,6 +30,7 @@ func Plugin(ctx context.Context) *plugin.Plugin {
 			"scaleway_billing_invoice":                    tableScalewayBillingInvoice(ctx),
 			"scaleway_iam_api_key":                        tableScalewayIamAPIKey(ctx),
 			"scaleway_iam_application":                    tableScalewayIamApplication(ctx),
+			"scaleway_iam_group":                          tableScalewayIamGroup(ctx),
 			"scaleway_iam_organization_security_settings": tableScalewayIamOrganizationSecuritySettings(ctx),
 			"scaleway_iam_policy":                         tableScalewayIamPolicy(ctx),
 			"scaleway_iam_user":                           tableScalewayIamUser(ctx),

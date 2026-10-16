@@ -175,7 +175,7 @@ func tableScalewayKubernetesCluster(_ context.Context) *plugin.Table {
 				Name:        "tags",
 				Description: "A list of tags associated with the cluster.",
 				Type:        proto.ColumnType_JSON,
-				Transform:   transform.FromValue(),
+				Transform:   transform.FromField("Tags"),
 			},
 
 			// Steampipe standard columns
