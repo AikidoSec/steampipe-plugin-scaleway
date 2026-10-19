@@ -15,8 +15,8 @@ import (
 
 func tableScalewayInstanceSecurityGroup(_ context.Context) *plugin.Table {
 	return &plugin.Table{
-		Name:          "scaleway_instance_security_group",
-		Description:   "A security group is a set of firewall rules on a set of instances.",
+		Name:              "scaleway_instance_security_group",
+		Description:       "A security group is a set of firewall rules on a set of instances.",
 		GetMatrixItemFunc: BuildZoneList,
 		List: &plugin.ListConfig{
 			Hydrate: listInstanceSecurityGroups,
@@ -93,6 +93,13 @@ func tableScalewayInstanceSecurityGroup(_ context.Context) *plugin.Table {
 				Name:        "stateful",
 				Description: "Indicates whether the security group is stateful, or not.",
 				Type:        proto.ColumnType_BOOL,
+			},
+			{
+				Name:        "rules",
+				Description: "The firewall rules of the security group.",
+				Type:        proto.ColumnType_JSON,
+				Hydrate:     getInstanceSecurityGroupRules,
+				Transform:   transform.FromValue(),
 			},
 			{
 				Name:        "servers",
@@ -188,6 +195,9 @@ func listInstanceSecurityGroups(ctx context.Context, d *plugin.QueryData, _ *plu
 		resp, err := instanceApi.ListSecurityGroups(req)
 		if err != nil {
 			plugin.Logger(ctx).Error("scaleway_instance_security_group.listInstanceSecurityGroups", "query_error", err)
+			if isNotFoundOrUnsupportedZoneError(err) {
+				return nil, nil
+			}
 			return nil, err
 		}
 
@@ -258,4 +268,49 @@ func getInstanceSecurityGroup(ctx context.Context, d *plugin.QueryData, h *plugi
 	}
 
 	return data.SecurityGroup, nil
+}
+
+func getInstanceSecurityGroupRules(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+	matrixZone := d.EqualsQualString("zone")
+	sg := h.Item.(*instance.SecurityGroup)
+
+	if matrixZone != sg.Zone.String() {
+		return nil, nil
+	}
+
+	client, err := getSessionConfig(ctx, d)
+	if err != nil {
+		plugin.Logger(ctx).Error("scaleway_instance_security_group.getInstanceSecurityGroupRules", "connection_error", err)
+		return nil, err
+	}
+
+	instanceApi := instance.NewAPI(client)
+
+	req := &instance.ListSecurityGroupRulesRequest{
+		Zone:            sg.Zone,
+		SecurityGroupID: sg.ID,
+		Page:            scw.Int32Ptr(1),
+		PerPage:         scw.Uint32Ptr(100),
+	}
+
+	rules := []*instance.SecurityGroupRule{}
+	for {
+		resp, err := instanceApi.ListSecurityGroupRules(req)
+		if err != nil {
+			if is403Error(err) || is404Error(err) {
+				return nil, nil
+			}
+			plugin.Logger(ctx).Error("scaleway_instance_security_group.getInstanceSecurityGroupRules", "query_error", err)
+			return nil, err
+		}
+
+		rules = append(rules, resp.Rules...)
+
+		if len(resp.Rules) == 0 || uint32(len(rules)) >= resp.TotalCount {
+			break
+		}
+		req.Page = scw.Int32Ptr(*req.Page + 1)
+	}
+
+	return rules, nil
 }

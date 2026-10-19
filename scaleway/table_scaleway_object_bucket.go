@@ -261,7 +261,7 @@ func getBucketPolicy(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrate
 	// Create client
 	client, err := getObjectSessionConfig(ctx, d, bucket.Region, bucket.Project)
 	if err != nil {
-		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketIsPublic", "connection_error", err)
+		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketPolicy", "connection_error", err)
 		return nil, err
 	}
 
@@ -290,7 +290,7 @@ func getBucketLifecycle(ctx context.Context, d *plugin.QueryData, h *plugin.Hydr
 	// Create client
 	client, err := getObjectSessionConfig(ctx, d, bucket.Region, bucket.Project)
 	if err != nil {
-		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketIsPublic", "connection_error", err)
+		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketLifecycle", "connection_error", err)
 		return nil, err
 	}
 
@@ -319,7 +319,7 @@ func getBucketACL(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateDat
 	// Create client
 	client, err := getObjectSessionConfig(ctx, d, bucket.Region, bucket.Project)
 	if err != nil {
-		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketIsPublic", "connection_error", err)
+		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketACL", "connection_error", err)
 		return nil, err
 	}
 
@@ -348,7 +348,7 @@ func getBucketTagging(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrat
 	// Create client
 	client, err := getObjectSessionConfig(ctx, d, bucket.Region, bucket.Project)
 	if err != nil {
-		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketIsPublic", "connection_error", err)
+		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketTagging", "connection_error", err)
 		return nil, err
 	}
 
@@ -377,7 +377,7 @@ func getBucketCors(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateDa
 	// Create client
 	client, err := getObjectSessionConfig(ctx, d, bucket.Region, bucket.Project)
 	if err != nil {
-		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketIsPublic", "connection_error", err)
+		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketCors", "connection_error", err)
 		return nil, err
 	}
 
@@ -406,7 +406,7 @@ func getBucketWebsite(ctx context.Context, d *plugin.QueryData, h *plugin.Hydrat
 	// Create client
 	client, err := getObjectSessionConfig(ctx, d, bucket.Region, bucket.Project)
 	if err != nil {
-		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketIsPublic", "connection_error", err)
+		plugin.Logger(ctx).Error("scaleway_object_bucket.getBucketWebsite", "connection_error", err)
 		return nil, err
 	}
 

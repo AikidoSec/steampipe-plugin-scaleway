@@ -15,8 +15,8 @@ import (
 
 func tableScalewayInstanceServer(_ context.Context) *plugin.Table {
 	return &plugin.Table{
-		Name:          "scaleway_instance_server",
-		Description:   "A Compute Instance server is a virtual server in Scaleway.",
+		Name:              "scaleway_instance_server",
+		Description:       "A Compute Instance server is a virtual server in Scaleway.",
 		GetMatrixItemFunc: BuildZoneList,
 		List: &plugin.ListConfig{
 			Hydrate: listInstanceServers,
@@ -132,6 +132,12 @@ func tableScalewayInstanceServer(_ context.Context) *plugin.Table {
 				Description: "Specifies the information about the public IP.",
 				Type:        proto.ColumnType_JSON,
 				Transform:   transform.FromField("PublicIP"),
+			},
+			{
+				Name:        "public_ips",
+				Description: "The public IP addresses attached to the server.",
+				Type:        proto.ColumnType_JSON,
+				Transform:   transform.FromField("PublicIPs"),
 			},
 			{
 				Name:        "location",
@@ -272,6 +278,9 @@ func listInstanceServers(ctx context.Context, d *plugin.QueryData, _ *plugin.Hyd
 		resp, err := instanceApi.ListServers(req)
 		if err != nil {
 			plugin.Logger(ctx).Error("scaleway_instance_server.listInstanceServers", "query_error", err)
+			if isNotFoundOrUnsupportedZoneError(err) {
+				return nil, nil
+			}
 			return nil, err
 		}
 
@@ -303,7 +312,7 @@ func getInstanceServer(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 
 	parseZoneData, err := scw.ParseZone(zone)
 	if err != nil {
-		plugin.Logger(ctx).Error("scaleway_instance_server.listInstanceServers", "zone_parsing_error", err)
+		plugin.Logger(ctx).Error("scaleway_instance_server.getInstanceServer", "zone_parsing_error", err)
 		return nil, err
 	}
 

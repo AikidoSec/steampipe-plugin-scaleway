@@ -79,6 +79,26 @@ func TestIs404Error(t *testing.T) {
 	}
 }
 
+func TestIsNotFoundOrUnsupportedZoneError(t *testing.T) {
+	if !isNotFoundOrUnsupportedZoneError(&scw.ResponseError{StatusCode: http.StatusNotFound}) {
+		t.Errorf("isNotFoundOrUnsupportedZoneError() = false, want true for a 404")
+	}
+
+	if !isNotFoundOrUnsupportedZoneError(&scw.ResponseError{StatusCode: http.StatusNotImplemented}) {
+		t.Errorf("isNotFoundOrUnsupportedZoneError() = false, want true for a 501")
+	}
+
+	for _, err := range []error{
+		&scw.ResponseError{StatusCode: http.StatusInternalServerError},
+		&scw.ResponseError{StatusCode: http.StatusForbidden},
+		nil,
+	} {
+		if isNotFoundOrUnsupportedZoneError(err) {
+			t.Errorf("isNotFoundOrUnsupportedZoneError(%v) = true, want false", err)
+		}
+	}
+}
+
 func TestIsHTTPCodeErrorAWSResponseError(t *testing.T) {
 	respErr := &smithy.OperationError{
 		ServiceID:     "S3",

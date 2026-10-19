@@ -196,3 +196,28 @@ from
 where
   json_extract(auto_upgrade, '$.enabled') = 1;
 ```
+
+### List clusters with their API server ACL rules
+Expand the `acl_rules` column. Each rule has either an `ip` range or `scaleway_ranges` set. The column is fetched with one additional API call per cluster.
+
+```sql+postgres
+select
+  c.name,
+  c.id,
+  a ->> 'ip' as ip,
+  a ->> 'scaleway_ranges' as scaleway_ranges
+from
+  scaleway_kubernetes_cluster as c,
+  jsonb_array_elements(c.acl_rules) as a;
+```
+
+```sql+sqlite
+select
+  c.name,
+  c.id,
+  json_extract(a.value, '$.ip') as ip,
+  json_extract(a.value, '$.scaleway_ranges') as scaleway_ranges
+from
+  scaleway_kubernetes_cluster as c,
+  json_each(c.acl_rules) as a;
+```

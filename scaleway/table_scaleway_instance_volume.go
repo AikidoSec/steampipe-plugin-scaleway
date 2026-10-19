@@ -175,6 +175,9 @@ func listInstanceVolumes(ctx context.Context, d *plugin.QueryData, _ *plugin.Hyd
 		resp, err := instanceApi.ListVolumes(req)
 		if err != nil {
 			plugin.Logger(ctx).Error("scaleway_instance_volume.listInstanceVolumes", "query_error", err)
+			if isNotFoundOrUnsupportedZoneError(err) {
+				return nil, nil
+			}
 			return nil, err
 		}
 

@@ -1,0 +1,201 @@
+package scaleway
+
+import (
+	"context"
+
+	documentdb "github.com/scaleway/scaleway-sdk-go/api/documentdb/v1beta1"
+	"github.com/scaleway/scaleway-sdk-go/scw"
+	"github.com/turbot/steampipe-plugin-sdk/v5/grpc/proto"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin"
+	"github.com/turbot/steampipe-plugin-sdk/v5/plugin/transform"
+)
+
+//// TABLE DEFINITION
+
+func tableScalewayDocumentDBSnapshot(_ context.Context) *plugin.Table {
+	return &plugin.Table{
+		Name:              "scaleway_documentdb_snapshot",
+		Description:       "A Managed Database for DocumentDB snapshot is a point-in-time copy of an instance.",
+		GetMatrixItemFunc: BuildRegionList,
+		List: &plugin.ListConfig{
+			Hydrate: listDocumentDBSnapshots,
+			KeyColumns: []*plugin.KeyColumn{
+				{
+					Name:    "region",
+					Require: plugin.Optional,
+				},
+				{
+					Name:    "project_id",
+					Require: plugin.Optional,
+				},
+			},
+		},
+		Columns: []*plugin.Column{
+			{
+				Name:        "id",
+				Description: "The unique identifier of the snapshot.",
+				Type:        proto.ColumnType_STRING,
+				Transform:   transform.FromField("ID"),
+			},
+			{
+				Name:        "name",
+				Description: "The name of the snapshot.",
+				Type:        proto.ColumnType_STRING,
+			},
+			{
+				Name:        "instance_id",
+				Description: "The ID of the instance the snapshot was taken from.",
+				Type:        proto.ColumnType_STRING,
+				Transform:   transform.FromField("InstanceID"),
+			},
+			{
+				Name:        "instance_name",
+				Description: "The name of the instance the snapshot was taken from.",
+				Type:        proto.ColumnType_STRING,
+			},
+			{
+				Name:        "status",
+				Description: "The status of the snapshot.",
+				Type:        proto.ColumnType_STRING,
+				Transform:   transform.FromField("Status").Transform(transform.ToString),
+			},
+			{
+				Name:        "size",
+				Description: "The size of the snapshot, in bytes.",
+				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("Size").Transform(sizeToInt),
+			},
+			{
+				Name:        "node_type",
+				Description: "The node type of the instance at the time of the snapshot.",
+				Type:        proto.ColumnType_STRING,
+			},
+			{
+				Name:        "volume_type",
+				Description: "The volume type of the snapshot.",
+				Type:        proto.ColumnType_JSON,
+			},
+			{
+				Name:        "expires_at",
+				Description: "The time when the snapshot expires.",
+				Type:        proto.ColumnType_TIMESTAMP,
+			},
+			{
+				Name:        "created_at",
+				Description: "The time when the snapshot was created.",
+				Type:        proto.ColumnType_TIMESTAMP,
+			},
+			{
+				Name:        "updated_at",
+				Description: "The time when the snapshot was last updated.",
+				Type:        proto.ColumnType_TIMESTAMP,
+			},
+
+			// Scaleway standard columns
+			{
+				Name:        "region",
+				Description: "The region where the snapshot resides.",
+				Type:        proto.ColumnType_STRING,
+				Transform:   transform.FromField("Region").Transform(transform.ToString),
+			},
+			{
+				Name:        "project_id",
+				Description: "The ID of the project of the owning instance, null when the instance no longer exists.",
+				Type:        proto.ColumnType_STRING,
+				Hydrate:     getDocumentDBSnapshotProjectID,
+				Transform:   transform.FromValue(),
+			},
+
+			// Steampipe standard columns
+			{
+				Name:        "title",
+				Description: "Title of the resource.",
+				Type:        proto.ColumnType_STRING,
+				Transform:   transform.FromField("Name"),
+			},
+			{
+				Name:        "akas",
+				Description: "Array of globally unique identifier strings (also known as) for the resource.",
+				Type:        proto.ColumnType_JSON,
+				Transform:   transform.FromField("ID").Transform(transform.EnsureStringArray),
+			},
+		},
+	}
+}
+
+//// LIST FUNCTION
+
+func listDocumentDBSnapshots(ctx context.Context, d *plugin.QueryData, _ *plugin.HydrateData) (interface{}, error) {
+	region, err := scw.ParseRegion(d.EqualsQualString("region"))
+	if err != nil {
+		plugin.Logger(ctx).Error("scaleway_documentdb_snapshot.listDocumentDBSnapshots", "region_parsing_error", err)
+		return nil, err
+	}
+
+	client, err := getSessionConfig(ctx, d)
+	if err != nil {
+		plugin.Logger(ctx).Error("scaleway_documentdb_snapshot.listDocumentDBSnapshots", "connection_error", err)
+		return nil, err
+	}
+
+	api := documentdb.NewAPI(client)
+
+	req := &documentdb.ListSnapshotsRequest{
+		Region:   region,
+		Page:     scw.Int32Ptr(1),
+		PageSize: scw.Uint32Ptr(listPageSize(d)),
+	}
+	if project := d.EqualsQualString("project_id"); project != "" {
+		req.ProjectID = scw.StringPtr(project)
+	}
+
+	var count int
+
+	for {
+		resp, err := api.ListSnapshots(req)
+		if err != nil {
+			plugin.Logger(ctx).Error("scaleway_documentdb_snapshot.listDocumentDBSnapshots", "query_error", err)
+			if is403Error(err) || isNotFoundOrUnsupportedZoneError(err) {
+				return nil, nil
+			}
+			return nil, err
+		}
+
+		for _, item := range resp.Snapshots {
+			if item == nil {
+				continue
+			}
+			d.StreamListItem(ctx, item)
+			count++
+
+			if d.RowsRemaining(ctx) == 0 {
+				return nil, nil
+			}
+		}
+
+		if len(resp.Snapshots) == 0 || uint64(count) >= uint64(resp.TotalCount) {
+			break
+		}
+		req.Page = scw.Int32Ptr(*req.Page + 1)
+	}
+
+	return nil, nil
+}
+
+//// HYDRATE FUNCTIONS
+
+func getDocumentDBSnapshotProjectID(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+	snapshot := h.Item.(*documentdb.Snapshot)
+	region := snapshot.Region
+	if snapshot.InstanceID == "" || region.String() != d.EqualsQualString("region") {
+		return nil, nil
+	}
+
+	return cachedParentProjectID(ctx, d, "documentdb.instance.project."+region.String()+"."+snapshot.InstanceID, func(client *scw.Client) (string, error) {
+		instance, err := documentdb.NewAPI(client).GetInstance(&documentdb.GetInstanceRequest{Region: region, InstanceID: snapshot.InstanceID})
+		if err != nil {
+			return "", err
+		}
+		return instance.ProjectID, nil
+	})
+}

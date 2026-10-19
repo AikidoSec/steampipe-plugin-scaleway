@@ -113,8 +113,7 @@ func BuildZoneList(_ context.Context, d *plugin.QueryData) []map[string]interfac
 
 		var allZones []scw.Zone
 		for _, region := range uniqueRegions {
-			zones := parseRegion(region).GetZones()
-			allZones = append(allZones, zones...)
+			allZones = append(allZones, zonesOfRegion(parseRegion(region))...)
 		}
 
 		// validate regions list
@@ -138,6 +137,17 @@ func BuildZoneList(_ context.Context, d *plugin.QueryData) []map[string]interfac
 	d.ConnectionManager.Cache.Set(cacheKey, matrix)
 
 	return matrix
+}
+
+// zonesOfRegion returns the known zones whose name starts with "<region>-".
+func zonesOfRegion(region scw.Region) []scw.Zone {
+	var zones []scw.Zone
+	for _, zone := range scw.AllZones {
+		if strings.HasPrefix(zone.String(), region.String()+"-") {
+			zones = append(zones, zone)
+		}
+	}
+	return zones
 }
 
 // GetDefaultScalewayRegion returns the default region for Scaleway project

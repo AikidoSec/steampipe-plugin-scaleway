@@ -202,6 +202,9 @@ func listInstanceImages(ctx context.Context, d *plugin.QueryData, _ *plugin.Hydr
 		resp, err := instanceApi.ListImages(req)
 		if err != nil {
 			plugin.Logger(ctx).Error("scaleway_instance_image.listInstanceImages", "query_error", err)
+			if isNotFoundOrUnsupportedZoneError(err) {
+				return nil, nil
+			}
 			return nil, err
 		}
 

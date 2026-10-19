@@ -15,8 +15,8 @@ import (
 
 func tableScalewayRDBInstance(_ context.Context) *plugin.Table {
 	return &plugin.Table{
-		Name:          "scaleway_rdb_instance",
-		Description:   "A Database Instance is composed of one or more Nodes, depending of the is_ha_cluster setting.",
+		Name:              "scaleway_rdb_instance",
+		Description:       "A Database Instance is composed of one or more Nodes, depending of the is_ha_cluster setting.",
 		GetMatrixItemFunc: BuildRegionList,
 		List: &plugin.ListConfig{
 			Hydrate: listRDBInstances,
@@ -79,8 +79,8 @@ func tableScalewayRDBInstance(_ context.Context) *plugin.Table {
 				Type:        proto.ColumnType_JSON,
 			},
 			{
-				Name:        "endpoint",
-				Description: "Describes the endpoint of the instance.",
+				Name:        "endpoints",
+				Description: "A list of the endpoints of the instance (public load balancer, direct access or private network).",
 				Type:        proto.ColumnType_JSON,
 			},
 			{
@@ -102,6 +102,13 @@ func tableScalewayRDBInstance(_ context.Context) *plugin.Table {
 				Name:        "volume",
 				Description: "Describes the volume attached with the instance.",
 				Type:        proto.ColumnType_JSON,
+			},
+			{
+				Name:        "acl_rules",
+				Description: "The ACL rules restricting network access to the Database Instance.",
+				Type:        proto.ColumnType_JSON,
+				Hydrate:     getRDBInstanceACLRules,
+				Transform:   transform.FromValue(),
 			},
 			{
 				Name:        "tags",
@@ -270,4 +277,49 @@ func getRDBInstance(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateD
 	}
 
 	return data, nil
+}
+
+func getRDBInstanceACLRules(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+	matrixRegion := d.EqualsQualString("region")
+	inst := h.Item.(*rdb.Instance)
+
+	if matrixRegion != inst.Region.String() {
+		return nil, nil
+	}
+
+	client, err := getSessionConfig(ctx, d)
+	if err != nil {
+		plugin.Logger(ctx).Error("scaleway_rdb_instance.getRDBInstanceACLRules", "connection_error", err)
+		return nil, err
+	}
+
+	rdbApi := rdb.NewAPI(client)
+
+	req := &rdb.ListInstanceACLRulesRequest{
+		Region:     inst.Region,
+		InstanceID: inst.ID,
+		Page:       scw.Int32Ptr(1),
+		PageSize:   scw.Uint32Ptr(100),
+	}
+
+	rules := []*rdb.ACLRule{}
+	for {
+		resp, err := rdbApi.ListInstanceACLRules(req)
+		if err != nil {
+			if is403Error(err) || is404Error(err) {
+				return nil, nil
+			}
+			plugin.Logger(ctx).Error("scaleway_rdb_instance.getRDBInstanceACLRules", "query_error", err)
+			return nil, err
+		}
+
+		rules = append(rules, resp.Rules...)
+
+		if len(resp.Rules) == 0 || uint32(len(rules)) >= resp.TotalCount {
+			break
+		}
+		req.Page = scw.Int32Ptr(*req.Page + 1)
+	}
+
+	return rules, nil
 }
