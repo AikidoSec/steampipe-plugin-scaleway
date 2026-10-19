@@ -160,6 +160,11 @@ func listIamApplications(ctx context.Context, d *plugin.QueryData, _ *plugin.Hyd
 //// HYDRATE FUNCTIONS
 
 func getIamApplication(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+	id := d.EqualsQualString("id")
+	if id == "" {
+		return nil, nil
+	}
+
 	client, err := getSessionConfig(ctx, d)
 	if err != nil {
 		plugin.Logger(ctx).Error("scaleway_iam_application.getIamApplication", "connection_error", err)
@@ -167,11 +172,6 @@ func getIamApplication(ctx context.Context, d *plugin.QueryData, h *plugin.Hydra
 	}
 
 	iamApi := iam.NewAPI(client)
-
-	id := d.EqualsQualString("id")
-	if id == "" {
-		return nil, nil
-	}
 
 	data, err := iamApi.GetApplication(&iam.GetApplicationRequest{
 		ApplicationID: id,

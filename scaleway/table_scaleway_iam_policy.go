@@ -246,6 +246,11 @@ func listIamPolicies(ctx context.Context, d *plugin.QueryData, _ *plugin.Hydrate
 //// HYDRATE FUNCTIONS
 
 func getIamPolicy(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+	id := d.EqualsQualString("id")
+	if id == "" {
+		return nil, nil
+	}
+
 	client, err := getSessionConfig(ctx, d)
 	if err != nil {
 		plugin.Logger(ctx).Error("scaleway_iam_policy.getIamPolicy", "connection_error", err)
@@ -253,11 +258,6 @@ func getIamPolicy(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateDat
 	}
 
 	iamApi := iam.NewAPI(client)
-
-	id := d.EqualsQualString("id")
-	if id == "" {
-		return nil, nil
-	}
 
 	data, err := iamApi.GetPolicy(&iam.GetPolicyRequest{
 		PolicyID: id,

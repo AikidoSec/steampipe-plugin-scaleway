@@ -156,6 +156,11 @@ func listIamGroups(ctx context.Context, d *plugin.QueryData, _ *plugin.HydrateDa
 //// HYDRATE FUNCTIONS
 
 func getIamGroup(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData) (interface{}, error) {
+	id := d.EqualsQualString("id")
+	if id == "" {
+		return nil, nil
+	}
+
 	client, err := getSessionConfig(ctx, d)
 	if err != nil {
 		plugin.Logger(ctx).Error("scaleway_iam_group.getIamGroup", "connection_error", err)
@@ -163,11 +168,6 @@ func getIamGroup(ctx context.Context, d *plugin.QueryData, h *plugin.HydrateData
 	}
 
 	iamApi := iam.NewAPI(client)
-
-	id := d.EqualsQualString("id")
-	if id == "" {
-		return nil, nil
-	}
 
 	data, err := iamApi.GetGroup(&iam.GetGroupRequest{
 		GroupID: id,
