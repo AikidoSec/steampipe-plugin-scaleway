@@ -98,12 +98,6 @@ func tableScalewayKubernetesCluster(_ context.Context) *plugin.Table {
 				Transform:   transform.FromField("AutoscalerConfig"),
 			},
 			{
-				Name:        "dashboard_enabled",
-				Description: "The enablement of the Kubernetes Dashboard in the cluster.",
-				Type:        proto.ColumnType_BOOL,
-				Transform:   transform.FromField("DashboardEnabled"),
-			},
-			{
 				Name:        "auto_upgrade",
 				Description: "The auto upgrade configuration of the cluster.",
 				Type:        proto.ColumnType_JSON,

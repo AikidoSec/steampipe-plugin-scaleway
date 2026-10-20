@@ -54,16 +54,19 @@ func tableScalewayIamPolicy(_ context.Context) *plugin.Table {
 				Name:        "nb_rules",
 				Description: "The number of rules in the policy.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("NbRules"),
 			},
 			{
 				Name:        "nb_scopes",
 				Description: "The number of scopes in the policy.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("NbScopes"),
 			},
 			{
 				Name:        "nb_permission_sets",
 				Description: "The number of permission sets in the policy.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("NbPermissionSets"),
 			},
 			{
 				Name:        "user_id",

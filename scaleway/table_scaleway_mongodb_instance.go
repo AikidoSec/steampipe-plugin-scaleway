@@ -62,6 +62,7 @@ func tableScalewayMongoDBInstance(_ context.Context) *plugin.Table {
 				Name:        "node_amount",
 				Description: "The number of nodes of the instance.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("NodeAmount"),
 			},
 			{
 				Name:        "volume",

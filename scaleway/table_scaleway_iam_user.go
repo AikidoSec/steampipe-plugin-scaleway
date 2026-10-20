@@ -63,7 +63,12 @@ func tableScalewayIamUser(_ context.Context) *plugin.Table {
 			},
 			{
 				Name:        "two_factor_enabled",
-				Description: "The 2FA enabled.",
+				Description: "The 2FA enabled. Deprecated by the API, use mfa instead.",
+				Type:        proto.ColumnType_BOOL,
+			},
+			{
+				Name:        "mfa",
+				Description: "Indicates whether MFA is enabled for the user.",
 				Type:        proto.ColumnType_BOOL,
 			},
 			{

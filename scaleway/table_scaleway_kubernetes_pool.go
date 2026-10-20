@@ -84,16 +84,19 @@ func tableScalewayKubernetesPool(_ context.Context) *plugin.Table {
 				Name:        "size",
 				Description: "The size (number of nodes) of the pool.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("Size"),
 			},
 			{
 				Name:        "min_size",
 				Description: "The minimum size of the pool.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("MinSize"),
 			},
 			{
 				Name:        "max_size",
 				Description: "The maximum size of the pool",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("MaxSize"),
 			},
 			{
 				Name:        "autohealing",

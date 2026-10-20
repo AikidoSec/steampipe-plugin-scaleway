@@ -75,6 +75,7 @@ func tableScalewayKeyManagerKey(_ context.Context) *plugin.Table {
 				Name:        "rotation_count",
 				Description: "The number of times the key has been rotated.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("RotationCount"),
 			},
 			{
 				Name:        "rotated_at",

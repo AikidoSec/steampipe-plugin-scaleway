@@ -64,6 +64,7 @@ func tableScalewaySecret(_ context.Context) *plugin.Table {
 				Name:        "version_count",
 				Description: "The number of versions of the secret.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("VersionCount"),
 			},
 			{
 				Name:        "managed",

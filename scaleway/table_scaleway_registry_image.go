@@ -68,6 +68,7 @@ func tableScalewayRegistryImage(_ context.Context) *plugin.Table {
 				Name:        "size",
 				Description: "Image size in bytes, calculated from the size of image layers. One layer used in two tags of the same image is counted once but one layer used in two images is counted twice.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("Size"),
 			},
 			{
 				Name:        "created_at",

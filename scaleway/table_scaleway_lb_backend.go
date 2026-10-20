@@ -124,31 +124,37 @@ func tableScalewayLBBackend(_ context.Context) *plugin.Table {
 				Name:        "max_connections",
 				Description: "The maximum number of connections allowed per backend server.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("MaxConnections"),
 			},
 			{
 				Name:        "max_retries",
 				Description: "The number of retries when connecting to a backend server.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("MaxRetries"),
 			},
 			{
 				Name:        "redispatch_attempt_count",
 				Description: "The number of redispatches on connection failure.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("RedispatchAttemptCount"),
 			},
 			{
 				Name:        "timeout_server",
 				Description: "The maximum inactivity time on the backend server side, in nanoseconds.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("TimeoutServer"),
 			},
 			{
 				Name:        "timeout_connect",
 				Description: "The maximum time to establish a connection to a backend server, in nanoseconds.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("TimeoutConnect"),
 			},
 			{
 				Name:        "timeout_tunnel",
 				Description: "The maximum tunnel inactivity time, in nanoseconds.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("TimeoutTunnel"),
 			},
 			{
 				Name:        "created_at",
