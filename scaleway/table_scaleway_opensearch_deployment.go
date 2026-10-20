@@ -62,11 +62,13 @@ func tableScalewayOpenSearchDeployment(_ context.Context) *plugin.Table {
 				Name:        "node_amount",
 				Description: "The number of nodes of the deployment.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("NodeAmount"),
 			},
 			{
 				Name:        "node_count",
 				Description: "The number of nodes currently in the deployment.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("NodeCount"),
 			},
 			{
 				Name:        "volume",

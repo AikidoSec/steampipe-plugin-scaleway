@@ -68,16 +68,19 @@ func tableScalewayLB(_ context.Context) *plugin.Table {
 				Name:        "frontend_count",
 				Description: "The number of frontends of the load balancer.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("FrontendCount"),
 			},
 			{
 				Name:        "backend_count",
 				Description: "The number of backends of the load balancer.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("BackendCount"),
 			},
 			{
 				Name:        "private_network_count",
 				Description: "The number of private networks attached to the load balancer.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("PrivateNetworkCount"),
 			},
 			{
 				Name:        "ssl_compatibility_level",

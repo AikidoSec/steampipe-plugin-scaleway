@@ -63,11 +63,13 @@ func tableScalewayJobDefinition(_ context.Context) *plugin.Table {
 				Name:        "memory_limit",
 				Description: "The memory limit of the job, in MB.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("MemoryLimit"),
 			},
 			{
 				Name:        "local_storage_capacity",
 				Description: "The local storage capacity of the job, in MB.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("LocalStorageCapacity"),
 			},
 			{
 				Name:        "job_timeout",

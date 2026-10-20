@@ -62,6 +62,7 @@ func tableScalewayRedisCluster(_ context.Context) *plugin.Table {
 				Name:        "cluster_size",
 				Description: "The number of nodes in the cluster.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("ClusterSize"),
 			},
 			{
 				Name:        "tls_enabled",

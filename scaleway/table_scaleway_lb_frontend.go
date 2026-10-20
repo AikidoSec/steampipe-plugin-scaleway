@@ -81,11 +81,13 @@ func tableScalewayLBFrontend(_ context.Context) *plugin.Table {
 				Name:        "connection_rate_limit",
 				Description: "The maximum number of new connections per second.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("ConnectionRateLimit"),
 			},
 			{
 				Name:        "timeout_client",
 				Description: "The maximum inactivity time on the client side, in nanoseconds.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("TimeoutClient"),
 			},
 			{
 				Name:        "acls",

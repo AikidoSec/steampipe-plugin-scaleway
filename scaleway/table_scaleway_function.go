@@ -112,16 +112,19 @@ func tableScalewayFunction(_ context.Context) *plugin.Table {
 				Name:        "min_scale",
 				Description: "The minimum number of instances.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("MinScale"),
 			},
 			{
 				Name:        "max_scale",
 				Description: "The maximum number of instances.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("MaxScale"),
 			},
 			{
 				Name:        "memory_limit",
 				Description: "The memory limit of the function, in MB.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("MemoryLimit"),
 			},
 			{
 				Name:        "cpu_limit",

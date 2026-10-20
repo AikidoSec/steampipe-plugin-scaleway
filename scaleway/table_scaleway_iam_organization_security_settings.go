@@ -42,6 +42,7 @@ func tableScalewayIamOrganizationSecuritySettings(_ context.Context) *plugin.Tab
 				Name:        "login_attempts_before_locked",
 				Description: "The number of failed login attempts before an account is locked.",
 				Type:        proto.ColumnType_INT,
+				Transform:   transform.FromField("LoginAttemptsBeforeLocked"),
 			},
 			{
 				Name:        "max_login_session_duration",
